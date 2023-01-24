@@ -1,0 +1,14 @@
+server {
+  listen 80;
+
+  server_name alex-prod.com;
+
+  location / {
+    proxy_pass http://frontend:3000;
+  }
+
+  location /backend {
+    proxy_pass http://backend:5000;
+    rewrite ^/backend/(.*) /$1 break;
+  }
+}

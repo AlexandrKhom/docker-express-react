@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  nginx:
+    image: nginx:stable-alpine
+    container_name: docker-nginx-prod
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf.prod:/etc/nginx/conf.d/nginx.conf
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - alex-prod
+
+  frontend:
+    build:
+      dockerfile: Dockerfile.prod
+      context: ./frontend
+    container_name: docker-frontend-prod
+    restart: unless-stopped
+    command: serve -s build -l 3000
+    networks:
+      - alex-prod
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: docker-backend-prod
+    command: npm run start
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - mongo_db
+    networks:
+      - alex-prod
+
+  mongo_db:
+    image: mongo:latest
+    container_name: mongo_db
+    env_file:
+      - .env
+    volumes:
+      - ./mongo_db:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    restart: on-failure
+    networks:
+      - alex-prod
+
+volumes:
+  mongo_db:
+
+networks:
+  alex-prod:
+    driver: bridge
+
